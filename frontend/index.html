@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeSpace – Multimodal AI Mental Health Therapist</title>
+  <meta name="description" content="SafeSpace is an empathetic, multimodal AI mental health companion powered by Groq, RAG clinical protocols, and emergency escalation.">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dark-mode">
+  <div class="app-layout">
+    
+    <!-- LEFT SIDEBAR: Sessions & Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon-wrapper">
+            <i data-feather="heart" class="brand-icon"></i>
+          </div>
+          <div>
+            <h1 class="brand-title">SafeSpace</h1>
+            <span class="brand-subtitle">AI Therapist & Companion</span>
+          </div>
+        </div>
+        <button class="icon-btn new-chat-btn" id="newChatBtn" title="Start New Conversation">
+          <i data-feather="plus"></i>
+        </button>
+      </div>
+
+      <!-- Quick Mood Check-in -->
+      <div class="mood-widget">
+        <label class="widget-label"><i data-feather="smile"></i> How are you feeling right now?</label>
+        <div class="mood-chips" id="moodChips">
+          <button class="mood-chip" data-mood="anxious">😰 Anxious</button>
+          <button class="mood-chip" data-mood="overwhelmed">🤯 Overwhelmed</button>
+          <button class="mood-chip" data-mood="sad">😔 Down</button>
+          <button class="mood-chip" data-mood="exhausted">😴 Drained</button>
+          <button class="mood-chip" data-mood="calm">🌿 Calm</button>
+        </div>
+      </div>
+
+      <!-- Therapeutic Toolkit Shortcuts -->
+      <div class="toolkit-nav">
+        <span class="widget-label"><i data-feather="activity"></i> Clinical Toolkit</span>
+        <button class="tool-btn" id="openBreathingModal">
+          <span class="tool-emoji">🫁</span>
+          <div class="tool-text">
+            <strong>4-7-8 Breath Pacer</strong>
+            <span>Vagus nerve calming orb</span>
+          </div>
+        </button>
+        <button class="tool-btn" id="openGroundingModal">
+          <span class="tool-emoji">🧘</span>
+          <div class="tool-text">
+            <strong>5-4-3-2-1 Grounding</strong>
+            <span>Sensory panic interruption</span>
+          </div>
+        </button>
+        <button class="tool-btn" id="openCbtModal">
+          <span class="tool-emoji">📝</span>
+          <div class="tool-text">
+            <strong>CBT Thought Reframer</strong>
+            <span>Challenge cognitive distortions</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Conversation History -->
+      <div class="history-section">
+        <span class="widget-label"><i data-feather="clock"></i> Past Conversations</span>
+        <div class="session-list" id="sessionList">
+          <!-- Dynamic session items will render here -->
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="provider-badge" id="providerBadge">
+          <span class="status-dot online"></span>
+          <span id="activeModelName">Groq LPU (GPT-OSS-120B)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT CONTAINER -->
+    <main class="main-content">
+      
+      <!-- Top Navigation Bar -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="mobile-toggle-btn icon-btn" id="mobileToggleBtn">
+            <i data-feather="menu"></i>
+          </button>
+          <div class="therapist-badge">
+            <div class="avatar-ring">
+              <span class="therapist-avatar">👩‍⚕️</span>
+              <span class="presence-badge online"></span>
+            </div>
+            <div>
+              <h2 class="therapist-name">Dr. Emily Hartman</h2>
+              <span class="therapist-role">Clinical Psychologist AI • CBT & DBT Guided</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Voice Audio Toggle -->
+          <button class="header-action-btn" id="ttsToggleBtn" title="Toggle Voice Responses">
+            <i data-feather="volume-2" id="ttsIcon"></i>
+            <span class="btn-label">Voice Off</span>
+          </button>
+
+          <!-- 1-Click SOS Trigger -->
+          <button class="sos-btn" id="sosHeaderBtn" title="Immediate Crisis Escalation">
+            <i data-feather="alert-triangle"></i>
+            <span>Emergency SOS</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Crisis Alert Banner (Hidden by default, triggered on distress) -->
+      <div class="crisis-banner" id="crisisBanner" style="display: none;">
+        <div class="crisis-banner-content">
+          <div class="crisis-icon-box">
+            <i data-feather="life-buoy"></i>
+          </div>
+          <div class="crisis-info">
+            <strong>You are not alone. Immediate free and confidential support is available 24/7.</strong>
+            <p>If you or someone you know is in crisis, call or text <strong>988</strong> (USA & Canada), text <strong>HOME to 741741</strong>, or contact local emergency services.</p>
+          </div>
+          <div class="crisis-actions">
+            <a href="tel:988" class="crisis-call-btn"><i data-feather="phone-call"></i> Call 988</a>
+            <button class="crisis-close-btn" id="closeCrisisBanner"><i data-feather="x"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Messages Scroll Area -->
+      <div class="messages-container" id="messagesContainer">
+        <!-- Welcome Hero Banner -->
+        <div class="welcome-card" id="welcomeCard">
+          <div class="welcome-sparkle">✨</div>
+          <h3>Welcome to SafeSpace</h3>
+          <p>This is your confidential, non-judgmental space to express what is on your mind. Dr. Emily is here to listen, support, and help guide you through difficult moments.</p>
+          <div class="prompt-suggestions">
+            <button class="suggestion-chip" data-prompt="I have been feeling really anxious and overwhelmed with deadlines lately.">
+              "I feel really anxious and overwhelmed with work..."
+            </button>
+            <button class="suggestion-chip" data-prompt="I made a mistake today and keep beating myself up over it.">
+              "I keep replaying a mistake in my head..."
+            </button>
+            <button class="suggestion-chip" data-prompt="Can you guide me through a quick calming breathing exercise?">
+              "Guide me through a calming exercise..."
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Message List -->
+        <div class="messages-list" id="messagesList"></div>
+      </div>
+
+      <!-- Bottom Chat Input Bar -->
+      <footer class="chat-input-wrapper">
+        <div class="input-container">
+          <!-- Voice Input Button (Web Speech API) -->
+          <button class="icon-btn voice-input-btn" id="voiceInputBtn" title="Speak to Vent (Voice Input)">
+            <i data-feather="mic" id="micIcon"></i>
+          </button>
+
+          <textarea 
+            id="chatInput" 
+            class="chat-textarea" 
+            placeholder="What is weighing on your heart or mind today? (Shift + Enter for new line)" 
+            rows="1"
+          ></textarea>
+
+          <!-- Send Button -->
+          <button class="icon-btn send-btn" id="sendBtn" title="Send message">
+            <i data-feather="send"></i>
+          </button>
+        </div>
+        <div class="disclaimer-text">
+          SafeSpace provides empathetic support and clinical coping tools. It is not a replacement for medical diagnosis. In life-threatening emergencies, dial 988 or 911 immediately.
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- MODAL 1: 4-7-8 Breathing Pacer -->
+  <div class="modal-overlay" id="breathingModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i data-feather="wind"></i> 4-7-8 Relaxing Breath Pacer</h3>
+        <button class="close-modal-btn" data-close="breathingModal"><i data-feather="x"></i></button>
+      </div>
+      <div class="modal-body breathing-body">
+        <p class="modal-desc">Follow the expanding and contracting orb to stimulate your parasympathetic nervous system and reduce heart rate.</p>
+        
+        <div class="breath-visualizer-container">
+          <div class="breath-circle" id="breathCircle">
+            <span class="breath-instruction" id="breathInstruction">Ready</span>
+            <span class="breath-timer" id="breathTimer"></span>
+          </div>
+        </div>
+
+        <div class="modal-controls">
+          <button class="btn btn-primary" id="startBreathingBtn">Start Exercise</button>
+          <button class="btn btn-secondary" id="stopBreathingBtn" style="display: none;">Stop</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: 5-4-3-2-1 Sensory Grounding -->
+  <div class="modal-overlay" id="groundingModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i data-feather="compass"></i> 5-4-3-2-1 Sensory Grounding</h3>
+        <button class="close-modal-btn" data-close="groundingModal"><i data-feather="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="grounding-stepper" id="groundingStepper">
+          <div class="step-card active" data-step="1">
+            <div class="step-badge">Step 1 of 5</div>
+            <h4>👀 5 Things You Can SEE</h4>
+            <p>Look around your immediate space. Name 5 distinct items you notice (e.g. a book, sunlight on the floor, texture of the wall).</p>
+            <input type="text" class="step-input" placeholder="What do you see?">
+          </div>
+          <div class="step-card" data-step="2">
+            <div class="step-badge">Step 2 of 5</div>
+            <h4>✋ 4 Things You Can FEEL</h4>
+            <p>Notice 4 physical textures (e.g. feet touching floor, warmth of clothes, texture of your desk).</p>
+            <input type="text" class="step-input" placeholder="What can you feel?">
+          </div>
+          <div class="step-card" data-step="3">
+            <div class="step-badge">Step 3 of 5</div>
+            <h4>👂 3 Things You Can HEAR</h4>
+            <p>Close your eyes if comfortable. Listen for 3 background sounds (e.g. fan hum, distant cars, your breath).</p>
+            <input type="text" class="step-input" placeholder="What can you hear?">
+          </div>
+          <div class="step-card" data-step="4">
+            <div class="step-badge">Step 4 of 5</div>
+            <h4>👃 2 Things You Can SMELL</h4>
+            <p>Notice 2 scents in the room or on your wrist (e.g. coffee, fresh air, soap).</p>
+            <input type="text" class="step-input" placeholder="What can you smell?">
+          </div>
+          <div class="step-card" data-step="5">
+            <div class="step-badge">Step 5 of 5</div>
+            <h4>👅 1 Thing You Can TASTE</h4>
+            <p>Notice a lingering taste or take a small sip of cool water. Feel your body present here right now.</p>
+            <input type="text" class="step-input" placeholder="What can you taste?">
+          </div>
+        </div>
+
+        <div class="modal-controls">
+          <button class="btn btn-secondary" id="prevGroundingBtn" disabled>Previous</button>
+          <button class="btn btn-primary" id="nextGroundingBtn">Next Step</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: CBT Thought Reframer -->
+  <div class="modal-overlay" id="cbtModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i data-feather="edit-3"></i> CBT Thought Reframer</h3>
+        <button class="close-modal-btn" data-close="cbtModal"><i data-feather="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Unpack automatic negative thoughts (ANTs) and reconstruct them with rational evidence.</p>
+        
+        <div class="cbt-form">
+          <label>1. Automatic Intrusive Thought:</label>
+          <input type="text" id="cbtThoughtInput" class="step-input" placeholder="e.g., 'If I don't do this perfectly, I am a failure.'">
+
+          <label>2. Identify Cognitive Distortion:</label>
+          <select id="cbtDistortionSelect" class="step-input">
+            <option value="Catastrophizing">Catastrophizing (Expecting worst case)</option>
+            <option value="All-or-Nothing">All-or-Nothing Thinking (Black and white)</option>
+            <option value="Mind Reading">Mind Reading (Assuming others judge you)</option>
+            <option value="Emotional Reasoning">Emotional Reasoning ('I feel it, so it's true')</option>
+            <option value="Overgeneralization">Overgeneralization ('Nothing ever works')</option>
+          </select>
+
+          <label>3. Rational Adaptive Reframe:</label>
+          <textarea id="cbtReframeInput" class="step-input" rows="3" placeholder="What is a more compassionate and factual way to see this?"></textarea>
+
+          <button class="btn btn-primary" id="sendCbtToChatBtn">Discuss with Dr. Emily</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Emergency SOS Confirmation -->
+  <div class="modal-overlay" id="sosModal" style="display: none;">
+    <div class="modal-card sos-modal-card">
+      <div class="modal-header">
+        <h3 class="danger-title"><i data-feather="alert-octagon"></i> Emergency Crisis Assistance</h3>
+        <button class="close-modal-btn" data-close="sosModal"><i data-feather="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Are you experiencing acute distress or suicidal thoughts?</strong></p>
+        <p>Clicking <strong>Dispatch Alert</strong> will trigger an automated Twilio voice/SMS notification to safety responders and provide immediate hotline guidance.</p>
+        
+        <div class="hotline-card-list">
+          <div class="hotline-card">
+            <h4>988 Suicide & Crisis Lifeline</h4>
+            <p>Free, confidential, available 24/7/365.</p>
+            <a href="tel:988" class="btn btn-primary"><i data-feather="phone"></i> Call 988</a>
+          </div>
+          <div class="hotline-card">
+            <h4>Crisis Text Line</h4>
+            <p>Text with a trained Crisis Counselor.</p>
+            <a href="sms:741741?body=HOME" class="btn btn-secondary"><i data-feather="message-square"></i> Text HOME to 741741</a>
+          </div>
+        </div>
+
+        <div class="modal-controls">
+          <button class="btn btn-danger" id="confirmSosBtn">Trigger Automated SOS Alert</button>
+          <button class="btn btn-secondary" data-close="sosModal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load App Script -->
+  <script src="/app.js"></script>
+  <script>
+    feather.replace();
+  </script>
+</body>
+</html>
